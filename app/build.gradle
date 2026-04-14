@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.nanboom.pixelessentials'
+    namespace 'top.nanboom233.pixelessentials'
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.nanboom.pixelessentials"
+        applicationId "top.nanboom233.pixelessentials"
         minSdk 26
         targetSdk 36
         versionCode 1
