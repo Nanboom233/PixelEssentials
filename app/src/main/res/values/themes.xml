@@ -1,0 +1,12 @@
+<resources>
+    <style name="Theme.PixelEssentials.App" parent="@android:style/Theme.DeviceDefault.DayNight">
+        <item name="android:windowDisablePreview">true</item>
+    </style>
+
+    <style name="Theme.PixelEssentials.TransparentLauncher" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+</resources>

@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Pixel Essentials</string>
+    <string name="root_command_failed">Failed to open Wireless Debugging.</string>
+    <string name="root_authorization_failed">Root authorization failed or was denied.</string>
+    <string name="shortcut_not_supported">Pinned shortcuts are not supported by this launcher.</string>
+    <string name="shortcut_request_sent">Confirm the shortcut pin request on your launcher.</string>
+    <string name="shortcut_request_failed">Failed to request the pinned shortcut.</string>
+    <string name="shortcut_pinned_success">Shortcut pinned. Launcher entry hidden.</string>
+    <string name="shortcut_short_label">Wireless Debugging</string>
+    <string name="shortcut_long_label">Open Wireless Debugging</string>
+    <string name="tile_label">Wireless Debugging</string>
+    <string name="tile_enabled_subtitle">On</string>
+    <string name="tile_disabled_subtitle">Off</string>
+    <string name="tile_unavailable_subtitle">Root required</string>
+</resources>
