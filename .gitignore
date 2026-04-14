@@ -1,8 +1,12 @@
 .gradle/
 .gradle-user-home/
 .idea/
+docs/plans/
+docs/requirements/
 local.properties
 outputs/runtime/vibe-sessions/
+reports/
+scripts/
 
 **/build/
 *.iml
