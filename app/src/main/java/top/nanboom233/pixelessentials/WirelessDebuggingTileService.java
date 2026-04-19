@@ -5,16 +5,8 @@ import android.service.quicksettings.TileService;
 import android.util.Log;
 import android.widget.Toast;
 
-import top.nanboom233.pixelessentials.root.ExecResult;
-import top.nanboom233.pixelessentials.root.ProcessRootExecutor;
-import top.nanboom233.pixelessentials.root.RootAuthorizationUseCase;
-import top.nanboom233.pixelessentials.wireless.AuthorizedOpenWirelessDebuggingUseCase;
-import top.nanboom233.pixelessentials.wireless.OpenWirelessDebuggingUseCase;
-import top.nanboom233.pixelessentials.wireless.ReadWirelessDebuggingStateUseCase;
-import top.nanboom233.pixelessentials.wireless.ToggleWirelessDebuggingUseCase;
-import top.nanboom233.pixelessentials.wireless.WirelessDebuggingCommandProvider;
+import top.nanboom233.pixelessentials.wireless.WirelessDebuggingGateway;
 import top.nanboom233.pixelessentials.wireless.WirelessDebuggingState;
-import top.nanboom233.pixelessentials.wireless.WirelessDebuggingStateParser;
 
 public final class WirelessDebuggingTileService extends TileService {
 
@@ -32,13 +24,8 @@ public final class WirelessDebuggingTileService extends TileService {
 
     private void refreshTileState() {
         try {
-            ReadWirelessDebuggingStateUseCase useCase = new ReadWirelessDebuggingStateUseCase(
-                    new RootAuthorizationUseCase(new ProcessRootExecutor()),
-                    new ProcessRootExecutor(),
-                    new WirelessDebuggingCommandProvider(),
-                    new WirelessDebuggingStateParser()
-            );
-            WirelessDebuggingState state = useCase.read();
+            WirelessDebuggingGateway gateway = new WirelessDebuggingGateway(this);
+            WirelessDebuggingState state = gateway.readState();
             Log.i(
                     ShortcutEntryActivity.TAG,
                     "QS tile state refreshed. authorized=" + state.isAuthorized()
@@ -54,14 +41,8 @@ public final class WirelessDebuggingTileService extends TileService {
 
     private void runToggle() {
         try {
-            ToggleWirelessDebuggingUseCase useCase = new ToggleWirelessDebuggingUseCase(
-                    new RootAuthorizationUseCase(new ProcessRootExecutor()),
-                    new ProcessRootExecutor(),
-                    new WirelessDebuggingCommandProvider(),
-                    new WirelessDebuggingStateParser()
-            );
-
-            WirelessDebuggingState state = useCase.toggle();
+            WirelessDebuggingGateway gateway = new WirelessDebuggingGateway(this);
+            WirelessDebuggingState state = gateway.toggleState();
             updateTile(state);
             if (!state.isAuthorized()) {
                 Log.e(ShortcutEntryActivity.TAG, "QS tile toggle denied: " + state.getErrorMessage());

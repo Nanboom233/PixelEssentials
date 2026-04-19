@@ -8,19 +8,16 @@ import android.content.pm.ShortcutInfo;
 import android.content.pm.ShortcutManager;
 import android.graphics.drawable.Icon;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
-import top.nanboom233.pixelessentials.root.ExecResult;
-import top.nanboom233.pixelessentials.root.ProcessRootExecutor;
-import top.nanboom233.pixelessentials.root.RootAuthorizationUseCase;
-import top.nanboom233.pixelessentials.shortcuts.LaunchMode;
-import top.nanboom233.pixelessentials.shortcuts.LaunchModeResolver;
+import top.nanboom233.pixelessentials.shortcuts.PinnedShortcutProxyActivity;
 import top.nanboom233.pixelessentials.shortcuts.ShortcutPinResultReceiver;
 import top.nanboom233.pixelessentials.shortcuts.ShortcutTokenStore;
-import top.nanboom233.pixelessentials.wireless.AuthorizedOpenWirelessDebuggingUseCase;
-import top.nanboom233.pixelessentials.wireless.OpenWirelessDebuggingUseCase;
-import top.nanboom233.pixelessentials.wireless.WirelessDebuggingCommandProvider;
+import top.nanboom233.pixelessentials.wireless.SettingsLaunchSpec;
+import top.nanboom233.pixelessentials.wireless.WirelessDebuggingGateway;
 
 public final class ShortcutEntryActivity extends Activity {
     public static final String TAG = "PixelEssentials";
@@ -38,58 +35,63 @@ public final class ShortcutEntryActivity extends Activity {
         }
         dispatched = true;
 
+        if (!Intent.ACTION_MAIN.equals(getIntent() != null ? getIntent().getAction() : null)) {
+            Log.w(TAG, "Ignoring non-bootstrap launch for ShortcutEntryActivity");
+            finishSilently();
+            return;
+        }
+
         ShortcutTokenStore tokenStore = new ShortcutTokenStore(this);
-        LaunchMode launchMode = new LaunchModeResolver().resolve(
-                getIntent() != null ? getIntent().getAction() : null,
-                getIntent() != null ? getIntent().getStringExtra(ShortcutTokenStore.EXTRA_SHORTCUT_TOKEN) : null,
-                tokenStore.peekToken(),
-                tokenStore.isLauncherAliasEnabled()
-        );
-
-        if (launchMode == LaunchMode.DISPATCH) {
-            handleDispatch();
-            return;
-        }
-
-        if (launchMode == LaunchMode.BOOTSTRAP) {
-            handleBootstrap(tokenStore);
-            return;
-        }
-
-        Log.w(TAG, "Ignoring untrusted or unsupported launch intent");
-        finishSilently();
+        handleBootstrap(tokenStore);
     }
 
     private void handleBootstrap(ShortcutTokenStore tokenStore) {
         new Thread(() -> {
             try {
-                RootAuthorizationUseCase rootAuthorizationUseCase =
-                        new RootAuthorizationUseCase(new ProcessRootExecutor());
-                ExecResult rootResult = rootAuthorizationUseCase.ensureRootReady();
-                runOnUiThread(() -> {
-                    if (!rootAuthorizationUseCase.isAuthorized(rootResult)) {
-                        Log.e(TAG, "Root authorization failed: " + rootResult.getStderr());
+                WirelessDebuggingGateway gateway = new WirelessDebuggingGateway(this);
+                WirelessDebuggingGateway.PreparePinnedShortcutResult result =
+                        gateway.preparePinnedShortcut();
+                if (!result.isSuccess()) {
+                    runOnUiThread(() -> {
+                        Log.e(
+                                TAG,
+                                result.isAuthorized()
+                                        ? "Wireless debugging discovery failed: " + result.getErrorMessage()
+                                        : "Root authorization failed: " + result.getErrorMessage()
+                        );
                         Toast.makeText(
                                 this,
-                                getString(R.string.root_authorization_failed),
+                                result.isAuthorized()
+                                        ? getString(R.string.wireless_debugging_discovery_failed)
+                                        : getString(R.string.root_authorization_failed),
                                 Toast.LENGTH_LONG
                         ).show();
-                        finishSilently();
-                        return;
-                    }
+                        finishCompletely();
+                    });
+                    return;
+                }
 
-                    Log.i(TAG, "Root authorization preflight passed");
+                SettingsLaunchSpec spec = result.getLaunchSpec();
+                runOnUiThread(() -> {
+                    Log.i(
+                            TAG,
+                            "Root authorization preflight passed. Discovered wireless debugging spec from entry="
+                                    + spec.getEntryXmlName()
+                                    + ", targetPage=" + spec.getTargetPageXmlName()
+                                    + ", fragment=" + spec.getFragmentClassName()
+                                    + ", key=" + spec.getFragmentArgsKey()
+                    );
                     requestPinnedShortcut(tokenStore);
                 });
             } catch (Exception exception) {
-                Log.e(TAG, "Root authorization check crashed", exception);
+                Log.e(TAG, "Wireless debugging bootstrap crashed", exception);
                 runOnUiThread(() -> {
                     Toast.makeText(
                             this,
                             getString(R.string.root_authorization_failed),
                             Toast.LENGTH_LONG
                     ).show();
-                    finishSilently();
+                    finishCompletely();
                 });
             }
         }, "root-preflight").start();
@@ -104,7 +106,7 @@ public final class ShortcutEntryActivity extends Activity {
         }
 
         String token = tokenStore.getOrCreateToken();
-        Intent shortcutIntent = new Intent(this, ShortcutEntryActivity.class)
+        Intent shortcutIntent = new Intent(this, PinnedShortcutProxyActivity.class)
                 .setAction(ACTION_OPEN_WIRELESS_DEBUGGING)
                 .putExtra(ShortcutTokenStore.EXTRA_SHORTCUT_TOKEN, token);
 
@@ -112,6 +114,7 @@ public final class ShortcutEntryActivity extends Activity {
                 .setShortLabel(getString(R.string.shortcut_short_label))
                 .setLongLabel(getString(R.string.shortcut_long_label))
                 .setIcon(Icon.createWithResource(this, R.drawable.ic_shortcut_wireless_debugging))
+                .setActivity(new ComponentName(this, PinnedShortcutProxyActivity.class))
                 .setIntent(shortcutIntent)
                 .build();
 
@@ -134,52 +137,21 @@ public final class ShortcutEntryActivity extends Activity {
         finishSilently();
     }
 
-    private void handleDispatch() {
-        AuthorizedOpenWirelessDebuggingUseCase useCase = new AuthorizedOpenWirelessDebuggingUseCase(
-                new RootAuthorizationUseCase(new ProcessRootExecutor()),
-                new OpenWirelessDebuggingUseCase(
-                        new WirelessDebuggingCommandProvider(),
-                        new ProcessRootExecutor()
-                )
-        );
-
-        new Thread(() -> {
-            try {
-                Log.i(TAG, "Dispatching root command for wireless debugging");
-                ExecResult result = useCase.open();
-                runOnUiThread(() -> {
-                    Log.i(
-                            TAG,
-                            "Root command completed. exitCode=" + result.getExitCode()
-                                    + ", stdout=" + result.getStdout()
-                                    + ", stderr=" + result.getStderr()
-                    );
-                    if (!result.isSuccess()) {
-                        Log.e(TAG, "Root command failed: " + result.getStderr());
-                        Toast.makeText(
-                                this,
-                                getString(R.string.root_command_failed),
-                                Toast.LENGTH_SHORT
-                        ).show();
-                    }
-                    finishSilently();
-                });
-            } catch (Exception exception) {
-                Log.e(TAG, "Unable to open wireless debugging", exception);
-                runOnUiThread(() -> {
-                    Toast.makeText(
-                            this,
-                            getString(R.string.root_command_failed),
-                            Toast.LENGTH_SHORT
-                    ).show();
-                    finishSilently();
-                });
-            }
-        }, "wireless-debug-dispatch").start();
-    }
-
     private void finishSilently() {
         finish();
         overridePendingTransition(0, 0);
+    }
+
+    private void finishCompletely() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            finishAndRemoveTask();
+        } else {
+            finish();
+        }
+        overridePendingTransition(0, 0);
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            android.os.Process.killProcess(android.os.Process.myPid());
+            System.exit(0);
+        }, 300L);
     }
 }
