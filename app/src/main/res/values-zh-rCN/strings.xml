@@ -1,0 +1,8 @@
+<resources>
+    <string name="wireless_debugging_discovery_failed">未能自动发现设置中的无线调试入口。</string>
+    <string name="keep_screen_on_tile_label">咖啡因</string>
+    <string name="keep_screen_on_notification_channel_name">咖啡因</string>
+    <string name="keep_screen_on_notification_remaining">剩余 %1$s</string>
+    <string name="keep_screen_on_notification_infinite">无限模式进行中</string>
+    <string name="keep_screen_on_notification_battery_action">无限制用电</string>
+</resources>

@@ -5,11 +5,25 @@
     <string name="shortcut_not_supported">Pinned shortcuts are not supported by this launcher.</string>
     <string name="shortcut_request_sent">Confirm the shortcut pin request on your launcher.</string>
     <string name="shortcut_request_failed">Failed to request the pinned shortcut.</string>
+    <string name="wireless_debugging_discovery_failed">Failed to discover the Wireless Debugging entry in Settings.</string>
     <string name="shortcut_pinned_success">Shortcut pinned. Launcher entry hidden.</string>
+    <string name="shortcut_pinned_success_hidden_until_used">Shortcut pinned. Launcher entry hidden until used.</string>
+    <string name="shortcut_pinned_success_kept_launcher">Shortcut pinned. Launcher entry kept for compatibility.</string>
     <string name="shortcut_short_label">Wireless Debugging</string>
     <string name="shortcut_long_label">Open Wireless Debugging</string>
     <string name="tile_label">Wireless Debugging</string>
     <string name="tile_enabled_subtitle">On</string>
     <string name="tile_disabled_subtitle">Off</string>
     <string name="tile_unavailable_subtitle">Root required</string>
+    <string name="keep_screen_on_tile_label">Caffeine</string>
+    <string name="keep_screen_on_tile_disabled_subtitle">Off</string>
+    <string name="keep_screen_on_tile_infinite_subtitle">∞</string>
+    <string name="keep_screen_on_tile_permission_subtitle">Grant settings access</string>
+    <string name="keep_screen_on_notification_channel_name">Caffeine</string>
+    <string name="keep_screen_on_notification_remaining">%1$s remaining</string>
+    <string name="keep_screen_on_notification_infinite">Infinite mode active</string>
+    <string name="keep_screen_on_notification_battery_action">Unrestricted battery</string>
+    <string name="xposed_module_description">PixelEssentials SystemUI keep-screen-on bridge</string>
+    <string name="flashlight_accessibility_service_label">Volume Key Flashlight</string>
+    <string name="flashlight_accessibility_service_description">Press both volume keys simultaneously to toggle the flashlight.</string>
 </resources>
